@@ -25,9 +25,9 @@ It wrote the code, ran away, and now the game is unplayable.
 
 ## 📝 Document Your Experience
 
-- [ ] Describe the game's purpose.
-- [ ] Detail which bugs you found.
-- [ ] Explain what fixes you applied.
+- [x] A number guessing game where the player tries to guess a secret number within a set number of attempts, with hints and a score tracker.
+- [x] Difficulty ranges were swapped (Hard/Normal), the secret number reset on every click, and the new game button didn't reset game status.
+- [x] Fixed ranges in `get_range_for_difficulty`, stored the secret in session state, and reset status/difficulty on new game.
 
 ## 📸 Demo
 
