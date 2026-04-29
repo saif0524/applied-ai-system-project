@@ -1,191 +1,149 @@
-import random
+from __future__ import annotations
+
+from datetime import date
+import logging
+from pathlib import Path
+
 import streamlit as st
 
-def get_range_for_difficulty(difficulty: str):
-    if difficulty == "Easy":
-        return 1, 20
-    if difficulty == "Normal":
-        return 1, 100
-    if difficulty == "Hard":
-        return 1, 50
-    return 1, 100
+from pawpal_system import Pet, Schedule, Task, User
 
+LOG_PATH = Path("app.log")
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    handlers=[logging.FileHandler(LOG_PATH), logging.StreamHandler()],
+)
+logger = logging.getLogger(__name__)
 
-def parse_guess(raw: str):
-    if raw is None:
-        return False, None, "Enter a guess."
+st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
+st.title("🐾 PawPal+")
+st.caption("Smart pet care planning with guardrails, agentic scheduling, and reliability checks.")
 
-    if raw == "":
-        return False, None, "Enter a guess."
-
-    try:
-        if "." in raw:
-            value = int(float(raw))
-        else:
-            value = int(raw)
-    except Exception:
-        return False, None, "That is not a number."
-
-    return True, value, None
-
-
-def check_guess(guess, secret):
-    if guess == secret:
-        return "Win", "🎉 Correct!"
-
-    try:
-        if guess > secret:
-            return "Too High", "📈 Go HIGHER!"
-        else:
-            return "Too Low", "📉 Go LOWER!"
-    except TypeError:
-        g = str(guess)
-        if g == secret:
-            return "Win", "🎉 Correct!"
-        if g > secret:
-            return "Too High", "📈 Go HIGHER!"
-        return "Too Low", "📉 Go LOWER!"
-
-
-def update_score(current_score: int, outcome: str, attempt_number: int):
-    if outcome == "Win":
-        points = 100 - 10 * (attempt_number + 1)
-        if points < 10:
-            points = 10
-        return current_score + points
-
-    if outcome == "Too High":
-        if attempt_number % 2 == 0:
-            return current_score + 5
-        return current_score - 5
-
-    if outcome == "Too Low":
-        return current_score - 5
-
-    return current_score
-
-st.set_page_config(page_title="Glitchy Guesser", page_icon="🎮")
-
-st.title("🎮 Game Glitch Investigator")
-st.caption("An AI-generated guessing game. Something is off.")
-
-st.sidebar.header("Settings")
-
-difficulty = st.sidebar.selectbox(
-    "Difficulty",
-    ["Easy", "Normal", "Hard"],
-    index=1,
+st.subheader("Owner and Pet")
+owner_name = st.text_input("Owner name", value="Jordan")
+available_minutes = st.number_input("Minutes available today", min_value=10, max_value=1440, value=90)
+pet_name = st.text_input("Pet name", value="Mochi")
+species = st.selectbox("Species", ["dog", "cat", "other"])
+pet_age = st.number_input("Pet age", min_value=0, max_value=40, value=4)
+health_notes = st.text_area("Health notes", value="Needs daily medication after food.")
+custom_health_cases = st.text_area(
+    "Custom health cases (optional)",
+    value="Example: gets anxious in loud areas; avoid long midday walks in heat.",
 )
 
-attempt_limit_map = {
-    "Easy": 6,
-    "Normal": 8,
-    "Hard": 5,
-}
-attempt_limit = attempt_limit_map[difficulty]
+st.subheader("Task Manager")
+if "tasks" not in st.session_state:
+    st.session_state.tasks = []
 
-low, high = get_range_for_difficulty(difficulty)
+c1, c2, c3 = st.columns(3)
+with c1:
+    task_title = st.text_input("Task title", value="Morning walk")
+with c2:
+    duration = st.number_input("Duration (min)", min_value=1, max_value=240, value=20)
+with c3:
+    priority = st.selectbox("Priority", ["low", "medium", "high"], index=2)
 
-st.sidebar.caption(f"Range: {low} to {high}")
-st.sidebar.caption(f"Attempts allowed: {attempt_limit}")
+c4, c5, c6 = st.columns(3)
+with c4:
+    frequency = st.selectbox(
+        "Frequency",
+        ["daily", "weekdays", "weekends", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"],
+        index=0,
+    )
+with c5:
+    required = st.checkbox("Required", value=False)
+with c6:
+    notes = st.text_input("Task notes", value="")
 
-if "secret" not in st.session_state:
-    st.session_state.secret = random.randint(low, high)
+if st.button("Add Task"):
+    st.session_state.tasks.append(
+        {
+            "title": task_title.strip(),
+            "duration_min": int(duration),
+            "priority": priority,
+            "frequency": frequency,
+            "is_required": required,
+            "notes": notes.strip(),
+        }
+    )
+    logger.info("Added task: %s", task_title)
 
-if "attempts" not in st.session_state:
-    st.session_state.attempts = 1
+if st.session_state.tasks:
+    st.write("Current tasks")
+    st.table(st.session_state.tasks)
+else:
+    st.info("No tasks yet. Add a few tasks to build a schedule.")
 
-if "score" not in st.session_state:
-    st.session_state.score = 0
-
-if "status" not in st.session_state:
-    st.session_state.status = "playing"
-
-if "history" not in st.session_state:
-    st.session_state.history = []
-
-st.subheader("Make a guess")
-
-st.info(
-    f"Guess a number between 1 and 100. "
-    f"Attempts left: {attempt_limit - st.session_state.attempts}"
-)
-
-with st.expander("Developer Debug Info"):
-    st.write("Secret:", st.session_state.secret)
-    st.write("Attempts:", st.session_state.attempts)
-    st.write("Score:", st.session_state.score)
-    st.write("Difficulty:", difficulty)
-    st.write("History:", st.session_state.history)
-
-raw_guess = st.text_input(
-    "Enter your guess:",
-    key=f"guess_input_{difficulty}"
-)
-
-col1, col2, col3 = st.columns(3)
-with col1:
-    submit = st.button("Submit Guess 🚀")
-with col2:
-    new_game = st.button("New Game 🔁")
-with col3:
-    show_hint = st.checkbox("Show hint", value=True)
-
-if new_game:
-    st.session_state.attempts = 0
-    st.session_state.secret = random.randint(1, 100)
-    st.success("New game started.")
+if st.button("Clear Tasks"):
+    st.session_state.tasks = []
     st.rerun()
 
-if st.session_state.status != "playing":
-    if st.session_state.status == "won":
-        st.success("You already won. Start a new game to play again.")
+st.subheader("Generate Daily Plan")
+if st.button("Build Schedule"):
+    if not owner_name.strip() or not pet_name.strip():
+        st.error("Owner name and pet name are required.")
+        st.stop()
+
+    if not st.session_state.tasks:
+        st.error("Please add at least one task before generating a schedule.")
+        st.stop()
+
+    user = User(name=owner_name.strip(), available_minutes_per_day=int(available_minutes))
+    pet = Pet(name=pet_name.strip(), species=species, age=int(pet_age), health_notes=health_notes.strip())
+
+    tasks = [
+        Task(
+            title=t["title"],
+            duration_min=t["duration_min"],
+            priority=t["priority"],
+            frequency=t["frequency"],
+            is_required=t["is_required"],
+            notes=t.get("notes", ""),
+        )
+        for t in st.session_state.tasks
+        if t["title"].strip()
+    ]
+
+    schedule = Schedule(target_day=date.today())
+    plan = schedule.generate_plan(
+        tasks,
+        user,
+        pet,
+        custom_health_cases=custom_health_cases.strip(),
+    )
+
+    if not plan:
+        st.warning("No tasks could be scheduled under current constraints.")
     else:
-        st.error("Game over. Start a new game to try again.")
-    st.stop()
-
-if submit:
-    st.session_state.attempts += 1
-
-    ok, guess_int, err = parse_guess(raw_guess)
-
-    if not ok:
-        st.session_state.history.append(raw_guess)
-        st.error(err)
-    else:
-        st.session_state.history.append(guess_int)
-
-        if st.session_state.attempts % 2 == 0:
-            secret = str(st.session_state.secret)
-        else:
-            secret = st.session_state.secret
-
-        outcome, message = check_guess(guess_int, secret)
-
-        if show_hint:
-            st.warning(message)
-
-        st.session_state.score = update_score(
-            current_score=st.session_state.score,
-            outcome=outcome,
-            attempt_number=st.session_state.attempts,
+        st.success("Schedule generated.")
+        st.write("### Planned Tasks")
+        st.table(
+            [
+                {
+                    "title": t.title,
+                    "duration_min": t.duration_min,
+                    "priority": t.priority,
+                    "frequency": t.frequency,
+                    "required": t.is_required,
+                }
+                for t in plan
+            ]
         )
 
-        if outcome == "Win":
-            st.balloons()
-            st.session_state.status = "won"
-            st.success(
-                f"You won! The secret was {st.session_state.secret}. "
-                f"Final score: {st.session_state.score}"
-            )
-        else:
-            if st.session_state.attempts >= attempt_limit:
-                st.session_state.status = "lost"
-                st.error(
-                    f"Out of attempts! "
-                    f"The secret was {st.session_state.secret}. "
-                    f"Score: {st.session_state.score}"
-                )
+    st.write(f"Total minutes used: {schedule.total_minutes_used}")
+    st.write(f"Reliability score: {schedule.reliability_score:.2f}")
+    st.write("### Planner Reasoning")
+    st.code(schedule.explain_plan())
 
-st.divider()
-st.caption("Built by an AI that claims this code is production-ready.")
+    st.write("### RAG Guidance")
+    st.write(schedule.rag_guidance if schedule.rag_guidance else "No RAG guidance available.")
+
+    st.write("### Retrieved Knowledge")
+    if schedule.rag_evidence:
+        for item in schedule.rag_evidence:
+            st.markdown(f"- {item}")
+    else:
+        st.caption("No evidence retrieved.")
+
+    st.caption(f"Log file: {LOG_PATH.resolve()}")

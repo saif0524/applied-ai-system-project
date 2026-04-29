@@ -1,38 +1,109 @@
-# 🎮 Game Glitch Investigator: The Impossible Guesser
+# PawPal+ Smart Pet Care Manager
 
-## 🚨 The Situation
+## Original Project (Modules 1-3)
+My original project from Modules 1-3 was **Game Glitch Investigator**, a Streamlit number-guessing game used to practice bug finding and state debugging. It focused on gameplay behavior, session state, and basic testing, but it was not designed as a full real-world planning system. In this project, I applied those lessons to build a production-style AI-assisted planner for pet care.
 
-You asked an AI to build a simple "Number Guessing Game" using Streamlit.
-It wrote the code, ran away, and now the game is unplayable. 
+## Title and Summary
+**PawPal+** is a smart pet care management system that builds a practical daily care plan for a pet owner. It tracks tasks like feeding, walks, medications, grooming, and enrichment, then prioritizes and schedules them under real constraints such as available time and required tasks. This matters because it turns a messy to-do list into a structured, explainable care routine.
 
-- You can't win.
-- The hints lie to you.
-- The secret number seems to have commitment issues.
+## Architecture Overview
+PawPal+ uses a modular OOP backend in `pawpal_system.py` and a Streamlit frontend in `app.py`.
+- `User`, `Pet`, `Task` model the core domain.
+- `Schedule.generate_plan()` runs an **agentic workflow**: propose an initial plan, evaluate constraints, and repair the plan if needed.
+- `Schedule.generate_plan()` also runs **RAG**: it retrieves pet-care guidance from a knowledge base using current pet/task context, then attaches evidence-grounded advice to the final plan.
+- A reliability evaluator returns a score and warning messages when the plan is weak.
+- Guardrails and logging protect against bad inputs and improve traceability.
 
-## 🛠️ Setup
+System diagram: see `mermaid..js`.
 
-1. Install dependencies: `pip install -r requirements.txt`
-2. Run the broken app: `python -m streamlit run app.py`
+## Setup Instructions
+1. Create and activate a virtual environment:
+   ```bash
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+3. Run the app:
+   ```bash
+   python3 -m streamlit run app.py
+   ```
+4. Open the local URL from Streamlit.
+5. Enter owner/pet info, add tasks, and click **Build Schedule**.
+6. Review the **RAG Guidance** and **Retrieved Knowledge** sections to see evidence used by the assistant.
 
-## 🕵️‍♂️ Your Mission
+## Sample Interactions
+### Example 1: Balanced Day
+Input:
+- Available minutes: 90
+- Tasks: Walk (30, high), Feed (10, high, required), Medication (10, high, required), Play (20, medium)
 
-1. **Play the game.** Open the "Developer Debug Info" tab in the app to see the secret number. Try to win.
-2. **Find the State Bug.** Why does the secret number change every time you click "Submit"? Ask ChatGPT: *"How do I keep a variable from resetting in Streamlit when I click a button?"*
-3. **Fix the Logic.** The hints ("Higher/Lower") are wrong. Fix them.
-4. **Refactor & Test.** - Move the logic into `logic_utils.py`.
-   - Run `pytest` in your terminal.
-   - Keep fixing until all tests pass!
+Output (representative):
+- Plan includes Feed, Medication, Walk, Play (or similar high-value combination)
+- Total minutes <= 90
+- Reliability score near 1.0 with "Reliability check passed"
 
-## 📝 Document Your Experience
+### Example 2: Tight Constraint Day
+Input:
+- Available minutes: 25
+- Tasks: Feed (10, required), Long Walk (30), Groom (20)
 
-- [ ] Describe the game's purpose.
-- [ ] Detail which bugs you found.
-- [ ] Explain what fixes you applied.
+Output (representative):
+- Plan keeps Feed and drops longer optional tasks to fit budget
+- Explanation includes removed task reason
+- Reliability score medium/high depending on required coverage
 
-## 📸 Demo
+### Example 3: Infeasible Required Tasks
+Input:
+- Available minutes: 10
+- Required tasks: Medication (15), Feed (10)
 
-- [ ] [Insert a screenshot of your fixed, winning game here]
+Output (representative):
+- Only feasible subset can be scheduled
+- Reliability warning shown (score < 0.7)
+- Explanation indicates constraint conflict
 
-## 🚀 Stretch Features
+## Design Decisions
+1. **OOP domain modeling** (`User`, `Pet`, `Task`, `Schedule`) keeps logic modular and maintainable.
+2. **Agentic workflow integration** makes planning adaptive: the system plans, self-checks constraints, then repairs the schedule.
+3. **Reliability scoring** is part of main behavior so users can judge plan confidence.
+4. **Guardrails + logging** improve safety and debuggability.
+5. **RAG integration** improves recommendation quality by retrieving relevant care references before generating guidance.
 
-- [ ] [If you choose to complete Challenge 4, insert a screenshot of your Enhanced Game UI here]
+Trade-offs:
+- Rule-based planning is transparent and deterministic but less personalized than ML-based optimization.
+- Reliability score is heuristic, not a clinical guarantee.
+- Time-only optimization is simple; future versions could model exact time windows and travel constraints.
+
+## Testing Summary
+Automated tests cover key scheduling and reliability behaviors:
+- frequency filtering (`weekdays` excludes Sunday)
+- required-task prioritization
+- strict daily time budget compliance
+- reliability score drop when required workload is infeasible
+
+In one sandbox environment, tests could not run until `pytest` was installed; syntax checks passed. The test suite helped confirm the algorithm is deterministic and exposes edge-case failures clearly.
+
+## Reflection
+This project taught me that AI engineering is about system behavior, not just model output. Building PawPal+ required combining OOP design, algorithmic planning, safety checks, reliability metrics, and user-facing explanations into one coherent workflow. I learned that explainability and constraint handling are just as important as “smartness” when users depend on daily recommendations.
+
+## Responsible AI Reflection
+### What are the limitations or biases in your system?
+- The scheduler is rule-based, so it may miss nuanced care needs that are not explicitly represented in task inputs.
+- RAG quality depends on the built-in knowledge base and user-provided context; if either is incomplete, recommendations can be biased or shallow.
+- Reliability score is a heuristic, not a clinical or veterinary guarantee.
+
+### Could your AI be misused, and how would you prevent that?
+- Misuse risk: over-trusting suggestions as medical advice, or asking unsafe prompt-injection style questions.
+- Mitigations: input guardrails, explicit reliability warnings, transparent evidence display, and logging (`app.log`) for review.
+- Product boundary: recommendations should be treated as planning support, not diagnosis; urgent health decisions should go to a veterinarian.
+
+### What surprised you while testing your AI's reliability?
+- Small changes in available minutes can cause large shifts in feasible plans.
+- Answers can sound confident even when evidence is weak, which is why surfacing retrieved evidence next to guidance was important.
+
+### Collaboration with AI during this project
+- Helpful suggestion: AI-assisted scaffolding of modular OOP components (`User`, `Pet`, `Task`, `Schedule`) sped up implementation and testing.
+- Flawed suggestion: an early AI suggestion focused on generic behavior without enough edge-case testing; adding tests for infeasible required tasks and time-budget limits exposed and fixed that gap.

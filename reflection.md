@@ -1,41 +1,77 @@
-# 💭 Reflection: Game Glitch Investigator
+# PawPal+ Project Reflection
 
-Answer each question in 3 to 5 sentences. Be specific and honest about what actually happened while you worked. This is about your process, not trying to sound perfect.
+## 1. System Design
 
-## 1. What was broken when you started?
+**a. Initial design**
 
-- What did the game look like the first time you ran it?
-- List at least two concrete bugs you noticed at the start  
-  (for example: "the hints were backwards").
+- Briefly describe your initial UML design.
+User "1" -- "1..*" Pet : owns
+Pet "1" -- "0..*" Task : needs
+Schedule "1" -- "1" User : built_for
+Schedule "1" -- "1" Pet : built_for
+Schedule "1" o-- "0..*" Task : includes
+- What classes did you include, and what responsibilities did you assign to each?
+- Owner, Pet, Task, Schedule
 
----
+**b. Design changes**
 
-## 2. How did you use AI as a teammate?
-
-- Which AI tools did you use on this project (for example: ChatGPT, Gemini, Copilot)?
-- Give one example of an AI suggestion that was correct (including what the AI suggested and how you verified the result).
-- Give one example of an AI suggestion that was incorrect or misleading (including what the AI suggested and how you verified the result).
-
----
-
-## 3. Debugging and testing your fixes
-
-- How did you decide whether a bug was really fixed?
-- Describe at least one test you ran (manual or using pytest)  
-  and what it showed you about your code.
-- Did AI help you design or understand any tests? How?
+- Did your design change during implementation?
+- If yes, describe at least one change and why you made it.
 
 ---
 
-## 4. What did you learn about Streamlit and state?
+## 2. Scheduling Logic and Tradeoffs
 
-- How would you explain Streamlit "reruns" and session state to a friend who has never used Streamlit?
+**a. Constraints and priorities**
+
+- What constraints does your scheduler consider (for example: time, priority, preferences)?
+- How did you decide which constraints mattered most?
+
+**b. Tradeoffs**
+
+- Describe one tradeoff your scheduler makes.
+- Why is that tradeoff reasonable for this scenario?
 
 ---
 
-## 5. Looking ahead: your developer habits
+## 3. AI Collaboration
 
-- What is one habit or strategy from this project that you want to reuse in future labs or projects?
-  - This could be a testing habit, a prompting strategy, or a way you used Git.
-- What is one thing you would do differently next time you work with AI on a coding task?
-- In one or two sentences, describe how this project changed the way you think about AI generated code.
+**a. How you used AI**
+
+- How did you use AI tools during this project (for example: design brainstorming, debugging, refactoring)?
+- What kinds of prompts or questions were most helpful?
+
+**b. Judgment and verification**
+
+- Describe one moment where you did not accept an AI suggestion as-is.
+- How did you evaluate or verify what the AI suggested?
+
+---
+
+## 4. Testing and Verification
+
+**a. What you tested**
+
+- What behaviors did you test?
+- Why were these tests important?
+
+**b. Confidence**
+
+- How confident are you that your scheduler works correctly?
+- What edge cases would you test next if you had more time?
+
+---
+
+## 5. Reflection
+
+**a. What went well**
+
+- What part of this project are you most satisfied with?
+
+**b. What you would improve**
+
+- If you had another iteration, what would you improve or redesign?
+
+**c. Key takeaway**
+
+- What is one important thing you learned about designing systems or working with AI on this project?
