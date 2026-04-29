@@ -34,6 +34,17 @@ System diagram: see `mermaid..js`.
 5. Enter owner/pet info, add tasks, and click **Build Schedule**.
 6. Review the **RAG Guidance** and **Retrieved Knowledge** sections to see evidence used by the assistant.
 
+## Demo Walkthrough
+End-to-end walkthrough assets are in `assets/demo/`:
+- Screenshot 1: `assets/demo/demo_image_1.png`
+- Screenshot 2: `assets/demo/demo_image_2.png`
+- Screenshot 3: `assets/demo/demo_image_3.png`
+
+These walkthrough images correspond to the 3 sample interactions below and show:
+- user inputs (owner/pet/task constraints),
+- generated schedule output,
+- AI sections (**RAG Guidance**, **Retrieved Knowledge**, and **Reliability score**).
+
 ## Sample Interactions
 ### Example 1: Balanced Day
 Input:
