@@ -1,7 +1,7 @@
 # PawPal+ Smart Pet Care Manager
 
 ## Original Project (Modules 1-3)
-My original project from Modules 1-3 was **Game Glitch Investigator**, a Streamlit number-guessing game used to practice bug finding and state debugging. It focused on gameplay behavior, session state, and basic testing, but it was not designed as a full real-world planning system. In this project, I applied those lessons to build a production-style AI-assisted planner for pet care.
+My original project from Modules 1-3 was **PawPal+**, a Streamlit pet care planning app focused on organizing daily care tasks like walks, feeding, and medications. Its initial goals were to model owner/pet/task information and generate a daily schedule under time and priority constraints. In this extended version, I evolved that foundation into a fuller AI engineering system with integrated RAG, agentic scheduling, reliability scoring, and stronger guardrails/logging.
 
 ## Title and Summary
 **PawPal+** is a smart pet care management system that builds a practical daily care plan for a pet owner. It tracks tasks like feeding, walks, medications, grooming, and enrichment, then prioritizes and schedules them under real constraints such as available time and required tasks. This matters because it turns a messy to-do list into a structured, explainable care routine.
