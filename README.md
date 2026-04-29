@@ -10,11 +10,24 @@ My original project from Modules 1-3 was **PawPal+**, a Streamlit pet care plann
 PawPal+ uses a modular OOP backend in `pawpal_system.py` and a Streamlit frontend in `app.py`.
 - `User`, `Pet`, `Task` model the core domain.
 - `Schedule.generate_plan()` runs an **agentic workflow**: propose an initial plan, evaluate constraints, and repair the plan if needed.
-- `Schedule.generate_plan()` also runs **RAG**: it retrieves pet-care guidance from a knowledge base using current pet/task context, then attaches evidence-grounded advice to the final plan.
+- `Schedule.generate_plan()` also runs **RAG**: it retrieves pet-care guidance from `assets/knowledge_base/pet_care_kb.txt` using current pet/task/custom-notes context, then attaches evidence-grounded advice to the final plan.
 - A reliability evaluator returns a score and warning messages when the plan is weak.
 - Guardrails and logging protect against bad inputs and improve traceability.
 
-System diagram: see `mermaid..js`.
+System diagram:
+
+```mermaid
+flowchart TD
+    U[Pet Owner Inputs<br/>owner profile, pet profile, tasks] --> A[Streamlit UI<br/>app.py]
+    A --> G[Guardrails<br/>input checks + task validation]
+    G --> S[Agentic Scheduler<br/>generate -> evaluate -> repair]
+    S --> R[Retriever (RAG)<br/>pet-care knowledge lookup]
+    R --> E[Evaluator<br/>reliability score + explanations]
+    E --> O[Output<br/>daily plan + RAG guidance + evidence]
+    O --> H[Human Review<br/>owner confirms plan quality]
+    S --> L[Logging<br/>app.log]
+    T[Pytest Tests<br/>tests/test_game_logic.py] --> V[Verification<br/>frequency, priority, budget, reliability, RAG]
+```
 
 ## Setup Instructions
 1. Create and activate a virtual environment:
@@ -32,18 +45,15 @@ System diagram: see `mermaid..js`.
    ```
 4. Open the local URL from Streamlit.
 5. Enter owner/pet info, add tasks, and click **Build Schedule**.
-6. Review the **RAG Guidance** and **Retrieved Knowledge** sections to see evidence used by the assistant.
+6. Review **RAG Guidance** and **Retrieved Knowledge** in the output.
 
 ## Demo Walkthrough
-End-to-end walkthrough assets are in `assets/demo/`:
-- Screenshot 1: `assets/demo/demo_image_1.png`
-- Screenshot 2: `assets/demo/demo_image_2.png`
-- Screenshot 3: `assets/demo/demo_image_3.png`
+End-to-end walkthrough screenshots are in `assets/demo/`:
+- `assets/demo/demo_image_1.png`
+- `assets/demo/demo_image_2.png`
+- `assets/demo/demo_image_3.png`
 
-These walkthrough images correspond to the 3 sample interactions below and show:
-- user inputs (owner/pet/task constraints),
-- generated schedule output,
-- AI sections (**RAG Guidance**, **Retrieved Knowledge**, and **Reliability score**).
+These map to the sample interactions below and show input, schedule output, reliability score, and RAG evidence.
 
 ## Sample Interactions
 ### Example 1: Balanced Day
@@ -94,27 +104,28 @@ Automated tests cover key scheduling and reliability behaviors:
 - required-task prioritization
 - strict daily time budget compliance
 - reliability score drop when required workload is infeasible
+- RAG integration presence in schedule output
 
-In one sandbox environment, tests could not run until `pytest` was installed; syntax checks passed. The test suite helped confirm the algorithm is deterministic and exposes edge-case failures clearly.
+In one sandbox environment, tests could not run until `pytest` was installed; syntax checks passed. The test suite helped confirm deterministic behavior and edge-case handling.
 
 ## Reflection
 This project taught me that AI engineering is about system behavior, not just model output. Building PawPal+ required combining OOP design, algorithmic planning, safety checks, reliability metrics, and user-facing explanations into one coherent workflow. I learned that explainability and constraint handling are just as important as “smartness” when users depend on daily recommendations.
 
 ## Responsible AI Reflection
 ### What are the limitations or biases in your system?
-- The scheduler is rule-based, so it may miss nuanced care needs that are not explicitly represented in task inputs.
-- RAG quality depends on the built-in knowledge base and user-provided context; if either is incomplete, recommendations can be biased or shallow.
+- The scheduler is rule-based, so it may miss nuanced care needs not explicitly represented in task inputs.
+- RAG quality depends on the knowledge base and user-provided context; if either is incomplete, recommendations can be shallow or biased.
 - Reliability score is a heuristic, not a clinical or veterinary guarantee.
 
 ### Could your AI be misused, and how would you prevent that?
-- Misuse risk: over-trusting suggestions as medical advice, or asking unsafe prompt-injection style questions.
-- Mitigations: input guardrails, explicit reliability warnings, transparent evidence display, and logging (`app.log`) for review.
-- Product boundary: recommendations should be treated as planning support, not diagnosis; urgent health decisions should go to a veterinarian.
+- Misuse risk: over-trusting planning output as medical advice.
+- Mitigations: input guardrails, explicit reliability warnings, transparent evidence display, and logging (`app.log`).
+- Product boundary: recommendations are planning support, not diagnosis; urgent medical decisions should go to a veterinarian.
 
 ### What surprised you while testing your AI's reliability?
 - Small changes in available minutes can cause large shifts in feasible plans.
-- Answers can sound confident even when evidence is weak, which is why surfacing retrieved evidence next to guidance was important.
+- Outputs can sound confident even when evidence is weak, so surfacing retrieved evidence is important.
 
 ### Collaboration with AI during this project
 - Helpful suggestion: AI-assisted scaffolding of modular OOP components (`User`, `Pet`, `Task`, `Schedule`) sped up implementation and testing.
-- Flawed suggestion: an early AI suggestion focused on generic behavior without enough edge-case testing; adding tests for infeasible required tasks and time-budget limits exposed and fixed that gap.
+- Flawed suggestion: an early AI suggestion underemphasized edge-case testing; adding targeted tests for infeasible required workloads improved confidence.
